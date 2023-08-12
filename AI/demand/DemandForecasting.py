@@ -4,8 +4,9 @@ from sklearn.ensemble import GradientBoostingRegressor
 from lightgbm import LGBMRegressor
 from sklearn.linear_model import HuberRegressor, LinearRegression
 from sklearn.neighbors import KNeighborsRegressor
+import pandas as pd
 
-class DemandForecastingModel:
+class SecondaryDemandForecastingModel:
     def __init__(self):
         self.models = [
             ('RandomForest', RandomForestRegressor()),
@@ -16,18 +17,25 @@ class DemandForecastingModel:
             ('K Neighbors Regressor', KNeighborsRegressor()),
             ('Linear Regression', LinearRegression())
         ]
-        self.model_predictions = []
         self.second_model = LinearRegression()
 
     def fit(self, X_train, y_train):
+        model_predictions = []
         for name, model in self.models:
             print(f"Training {name}...")
             model.fit(X_train, y_train)
-            y_pred = model.predict(X_test)
-            self.model_predictions.append(y_pred)
+            y_pred = model.predict(X_train)
+            model_predictions.append(y_pred)
             
-        self.second_data = pd.DataFrame({name: pred for name, pred in zip([name for name, _ in self.models], self.model_predictions)})
-        self.second_model.fit(self.second_data, y_test)
+        second_data = pd.DataFrame({name: pred for name, pred in zip([name for name, _ in self.models], model_predictions)})
+        self.second_model.fit(second_data, y_train)
+        second_data
 
     def predict(self, X_test):
-        return self.second_model.predict(self.second_data)
+        model_predictions = []
+        for name, model in self.models:
+            y_pred = model.predict(X_test)
+            model_predictions.append(y_pred)
+            
+        second_data = pd.DataFrame({name: pred for name, pred in zip([name for name, _ in self.models], model_predictions)})
+        return self.second_model.predict(second_data)
